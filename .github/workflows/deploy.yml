@@ -1,0 +1,54 @@
+name: Deploy
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      # Checkout
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          repository: xinan/mocha-frontend
+          ref: main
+          token: ${{ secrets.MOCHA_DEMO }}
+
+      # Cache
+      - name: Cache Node Modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: node_modules-${{ hashFiles('package.json', 'package-lock.json') }}
+          restore-keys: |
+            node_modules-
+
+      # Use NodeJS
+      - name: Use NodeJS
+        uses: actions/setup-node@v4
+        with:
+          node-version: '23.x'
+      
+      # Build
+      - name: Run Build
+        run: |
+          npm ci
+          npm run build -- --base=/mocha-demo
+
+      # Upload
+      - name: Upload Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist/
+
+      # Deploy
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
