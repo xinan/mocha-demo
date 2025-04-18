@@ -3,18 +3,18 @@ name: Deploy
 on:
   workflow_dispatch:
     inputs:
-      source_repo:
-        description: 'The repository to checkout'
+      repo:
+        description: 'The repo of the triggering workflow'
         required: true
         type: string
-      source_ref:
-        description: 'The ref of the source repository to checkout'
+      run_id:
+        description: 'The run_id of the triggering workflow.'
         required: true
         type: string
-
-env:
-  VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
-  VITE_TURNSTILE_SITE_KEY: ${{ vars.VITE_TURNSTILE_SITE_KEY }}
+      artifact_name:
+        description: 'The name of the artifact to download.'
+        required: true
+        type: string
 
 jobs:
   build:
@@ -26,34 +26,14 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      # Checkout
-      - name: Checkout Repository
-        uses: actions/checkout@v4
+      - name: Download Artifact
+        uses: actions/download-artifact@v4
         with:
-          repository: ${{ github.event.inputs.source_repo }}
-          ref: ${{ github.event.inputs.source_ref }}
-          token: ${{ secrets.MOCHA_DEMO }}
-
-      # Cache
-      - name: Cache Node Modules
-        uses: actions/cache@v4
-        with:
-          path: node_modules
-          key: node_modules-${{ hashFiles('package.json', 'package-lock.json') }}
-          restore-keys: |
-            node_modules-
-
-      # Use NodeJS
-      - name: Use NodeJS
-        uses: actions/setup-node@v4
-        with:
-          node-version: '23.x'
-      
-      # Build
-      - name: Run Build
-        run: |
-          npm ci
-          npm run build -- --base=/mocha-demo
+          name: ${{ github.event.inputs.artifact_name }}
+          path: dist/
+          repository: ${{ github.event.inputs.repo }}
+          run-id: ${{ github.event.inputs.run_id }}
+          github-token: ${{ secrets.PAT }}
 
       # Upload
       - name: Upload Artifact
