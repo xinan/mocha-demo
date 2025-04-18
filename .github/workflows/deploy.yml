@@ -2,6 +2,19 @@ name: Deploy
 
 on:
   workflow_dispatch:
+    inputs:
+      source_repo:
+        description: 'The repository to checkout'
+        required: true
+        type: string
+      source_ref:
+        description: 'The ref of the source repository to checkout'
+        required: true
+        type: string
+
+env:
+  VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
+  VITE_TURNSTILE_SITE_KEY: ${{ vars.VITE_TURNSTILE_SITE_KEY }}
 
 jobs:
   build:
@@ -17,8 +30,8 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
         with:
-          repository: xinan/mocha-frontend
-          ref: main
+          repository: ${{ github.event.inputs.source_repo }}
+          ref: ${{ github.event.inputs.source_ref }}
           token: ${{ secrets.MOCHA_DEMO }}
 
       # Cache
@@ -52,3 +65,4 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+        
